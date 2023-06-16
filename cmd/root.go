@@ -3,9 +3,11 @@ package cmd
 import (
 	"os"
 
+	"github.com/gozeon/gmpa/utils"
 	"github.com/spf13/cobra"
 )
 
+var log = utils.Log
 var debug bool
 
 // rootCmd represents the base command when called without any subcommands
@@ -29,7 +31,7 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(func() {
 		if debug {
-			SetLogInfo()
+			utils.SetLogInfo()
 		}
 	})
 	rootCmd.PersistentFlags().BoolVarP(&debug, "debug", "d", false, "debug log output")

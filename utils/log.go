@@ -1,4 +1,4 @@
-package cmd
+package utils
 
 import (
 	"os"
@@ -6,16 +6,16 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var log = logrus.New()
+var Log = logrus.New()
 
 func init() {
-	log.SetFormatter(&logrus.TextFormatter{
+	Log.SetFormatter(&logrus.TextFormatter{
 		ForceColors:   true,
 		FullTimestamp: true,
 	})
 }
 
 func SetLogInfo() {
-	log.SetLevel(logrus.DebugLevel)
-	log.SetOutput(os.Stdout)
+	Log.SetLevel(logrus.DebugLevel)
+	Log.SetOutput(os.Stdout)
 }
