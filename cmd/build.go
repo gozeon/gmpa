@@ -8,15 +8,14 @@ import (
 
 	"github.com/gozeon/gmpa/utils"
 	cp "github.com/otiai10/copy"
-	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
 
 var (
-	ignoreFolder    = regexp.MustCompile(`^(.git|dist|.idea|.vscode|asserts)$`)
+	ignoreFolder    = regexp.MustCompile(`^(.git|dist|.idea|.vscode|public)$`)
 	ignoreFile      = ".gmpaignore"
 	outputDir       = "dist"
-	assertsDir      = "asserts"
+	publicDir       = "public"
 	indexJavascript = "main.js"
 	indexCss        = "style.css"
 	indexHtml       = "index.html"
@@ -31,15 +30,14 @@ var buildCmd = &cobra.Command{
 		cobra.CheckErr(err)
 		log.Info("workspace: ", workspace)
 
-		afs := afero.Afero{afero.NewOsFs()}
 		fileInfo, err := afs.ReadDir(workspace)
 		cobra.CheckErr(err)
 		for _, v := range fileInfo {
 			log.Debug(v)
 			if v.IsDir() {
-				if v.Name() == assertsDir {
+				if v.Name() == publicDir {
 					src := filepath.Join(workspace, v.Name())
-					dest := filepath.Join(workspace, outputDir)
+					dest := filepath.Join(workspace, outputDir, publicDir)
 					err := cp.Copy(src, dest)
 					cobra.CheckErr(err)
 				}
@@ -74,17 +72,19 @@ var buildCmd = &cobra.Command{
 						continue
 					}
 
-					log.Debug(html)
+					tempHtml := filepath.Join(workspace, v.Name(), indexHtml)
+					tpl, err := utils.GetTemplate(tempHtml)
+					cobra.CheckErr(err)
+
+					html.SetTemplate(tpl)
+					htmlString, err := html.GetHtml()
+					cobra.CheckErr(err)
 
 					dest := filepath.Join(workspace, outputDir, v.Name(), indexHtml)
-					indexHtmlExists, err := afs.Exists(dest)
-					if indexHtmlExists {
-						err := afs.Remove(dest)
-						cobra.CheckErr(err)
-					}
-					err = afs.SafeWriteReader(dest, strings.NewReader(html.GetHtml()))
+					afs.Remove(dest)
+					err = afs.SafeWriteReader(dest, strings.NewReader(htmlString))
 					cobra.CheckErr(err)
-					log.Info("generator html ", dest)
+					log.Info("generator html: ", dest)
 				}
 			}
 		}

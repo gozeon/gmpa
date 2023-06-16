@@ -8,6 +8,7 @@ import (
 )
 
 var log = utils.Log
+var afs = utils.Afs
 var debug bool
 
 // rootCmd represents the base command when called without any subcommands
