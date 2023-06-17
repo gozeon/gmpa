@@ -60,18 +60,22 @@ var buildCmd = &cobra.Command{
 						jsFileExists, err := afs.Exists(jsFilePath)
 						cobra.CheckErr(err)
 						if jsFileExists {
-							jsFile, err := afs.ReadFile(jsFilePath)
+							c, err := afs.ReadFile(jsFilePath)
+							r := utils.BuildJS(string(c))
+							if len(r.Errors) > 0 {
+								cobra.CheckErr(r.Errors)
+							}
 							cobra.CheckErr(err)
-							html.SetJs(string(jsFile))
+							html.SetJs(string(r.Code))
 						}
 
 						cssFilePath := filepath.Join(workspace, v.Name(), indexCss)
 						cssFileExists, err := afs.Exists(cssFilePath)
 						cobra.CheckErr(err)
 						if cssFileExists {
-							jsFile, err := afs.ReadFile(cssFilePath)
+							c, err := afs.ReadFile(cssFilePath)
 							cobra.CheckErr(err)
-							html.SetCss(string(jsFile))
+							html.SetCss(string(c))
 						}
 
 						if !jsFileExists && !cssFileExists {
