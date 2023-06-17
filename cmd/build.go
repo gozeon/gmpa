@@ -1,10 +1,12 @@
 package cmd
 
 import (
+	"io/fs"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
+	"sync"
 
 	"github.com/gozeon/gmpa/utils"
 	cp "github.com/otiai10/copy"
@@ -32,63 +34,68 @@ var buildCmd = &cobra.Command{
 
 		fileInfo, err := afs.ReadDir(workspace)
 		cobra.CheckErr(err)
+		var wg sync.WaitGroup
 		for _, v := range fileInfo {
+			wg.Add(1)
 			log.Debug(v)
 			if v.IsDir() {
-				if v.Name() == publicDir {
-					src := filepath.Join(workspace, v.Name())
-					dest := filepath.Join(workspace, outputDir, publicDir)
-					err := cp.Copy(src, dest)
-					cobra.CheckErr(err)
-				}
-				if !ignoreFolder.MatchString(v.Name()) {
-					isIgnore, err := afs.Exists(filepath.Join(workspace, v.Name(), ignoreFile))
-					cobra.CheckErr(err)
-					if isIgnore {
-						continue
-					}
-
-					html := utils.HtmlHelper{}
-
-					jsFilePath := filepath.Join(workspace, v.Name(), indexJavascript)
-					jsFileExists, err := afs.Exists(jsFilePath)
-					cobra.CheckErr(err)
-					if jsFileExists {
-						jsFile, err := afs.ReadFile(jsFilePath)
+				go func(v fs.FileInfo) {
+					defer wg.Done()
+					if v.Name() == publicDir {
+						src := filepath.Join(workspace, v.Name())
+						dest := filepath.Join(workspace, outputDir, publicDir)
+						err := cp.Copy(src, dest)
 						cobra.CheckErr(err)
-						html.SetJs(string(jsFile))
 					}
-
-					cssFilePath := filepath.Join(workspace, v.Name(), indexCss)
-					cssFileExists, err := afs.Exists(cssFilePath)
-					cobra.CheckErr(err)
-					if cssFileExists {
-						jsFile, err := afs.ReadFile(cssFilePath)
+					if !ignoreFolder.MatchString(v.Name()) {
+						isIgnore, err := afs.Exists(filepath.Join(workspace, v.Name(), ignoreFile))
 						cobra.CheckErr(err)
-						html.SetCss(string(jsFile))
+						if isIgnore {
+							return
+						}
+
+						html := utils.HtmlHelper{}
+
+						jsFilePath := filepath.Join(workspace, v.Name(), indexJavascript)
+						jsFileExists, err := afs.Exists(jsFilePath)
+						cobra.CheckErr(err)
+						if jsFileExists {
+							jsFile, err := afs.ReadFile(jsFilePath)
+							cobra.CheckErr(err)
+							html.SetJs(string(jsFile))
+						}
+
+						cssFilePath := filepath.Join(workspace, v.Name(), indexCss)
+						cssFileExists, err := afs.Exists(cssFilePath)
+						cobra.CheckErr(err)
+						if cssFileExists {
+							jsFile, err := afs.ReadFile(cssFilePath)
+							cobra.CheckErr(err)
+							html.SetCss(string(jsFile))
+						}
+
+						if !jsFileExists && !cssFileExists {
+							return
+						}
+
+						tempHtml := filepath.Join(workspace, v.Name(), indexHtml)
+						tpl, err := utils.GetTemplate(tempHtml)
+						cobra.CheckErr(err)
+
+						html.SetTemplate(tpl)
+						htmlString, err := html.GetHtml()
+						cobra.CheckErr(err)
+
+						dest := filepath.Join(workspace, outputDir, v.Name(), indexHtml)
+						afs.Remove(dest)
+						err = afs.SafeWriteReader(dest, strings.NewReader(htmlString))
+						cobra.CheckErr(err)
+						log.Info("generator html: ", dest)
 					}
-
-					if !jsFileExists && !cssFileExists {
-						continue
-					}
-
-					tempHtml := filepath.Join(workspace, v.Name(), indexHtml)
-					tpl, err := utils.GetTemplate(tempHtml)
-					cobra.CheckErr(err)
-
-					html.SetTemplate(tpl)
-					htmlString, err := html.GetHtml()
-					cobra.CheckErr(err)
-
-					dest := filepath.Join(workspace, outputDir, v.Name(), indexHtml)
-					afs.Remove(dest)
-					err = afs.SafeWriteReader(dest, strings.NewReader(htmlString))
-					cobra.CheckErr(err)
-					log.Info("generator html: ", dest)
-				}
+				}(v)
 			}
 		}
-
+		wg.Wait()
 		log.Info("done.")
 	},
 }
