@@ -88,6 +88,8 @@ var buildCmd = &cobra.Command{
 				}
 			}
 		}
+
+		log.Info("done.")
 	},
 }
 
