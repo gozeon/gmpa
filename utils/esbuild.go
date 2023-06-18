@@ -2,9 +2,20 @@ package utils
 
 import "github.com/evanw/esbuild/pkg/api"
 
-func BuildJS(js string) api.TransformResult {
-	return api.Transform(js, api.TransformOptions{
-		Target: api.ES2015,
-		Format: api.FormatIIFE,
+func BuildJS(jsFile []string) api.BuildResult {
+	return api.Build(api.BuildOptions{
+		EntryPoints:       jsFile,
+		Bundle:            true,
+		MinifyWhitespace:  false,
+		MinifyIdentifiers: false,
+		MinifySyntax:      false,
+		Engines: []api.Engine{
+			{Name: api.EngineChrome, Version: "58"},
+			{Name: api.EngineFirefox, Version: "57"},
+			{Name: api.EngineSafari, Version: "11"},
+			{Name: api.EngineEdge, Version: "16"},
+		},
+		Write:   false,
+		Outfile: "index.js",
 	})
 }
