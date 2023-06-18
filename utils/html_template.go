@@ -29,6 +29,13 @@ func GetTemplate(htmlPath string) (*template.Template, error) {
 		return template.New(name).ParseFiles(getAllHtml(dir)...)
 	}
 
-	return template.New("string").Parse(`<style>{{.CssContent}}</style><script>{{.JsContent}}</script>`)
+	return template.New("string").Parse(`
+	<head>
+		<style>{{.CssContent}}</style>
+	<head>
+	<body>
+		<script>{{.JsContent}}</script>
+	</body>
+	`)
 
 }
