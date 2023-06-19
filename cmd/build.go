@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/gozeon/gmpa/utils"
 	cp "github.com/otiai10/copy"
@@ -29,6 +30,8 @@ var buildCmd = &cobra.Command{
 	Use:   "build",
 	Short: "A brief description of your command",
 	Run: func(cmd *cobra.Command, args []string) {
+		start := time.Now()
+		count := 0
 		workspace, err := os.Getwd()
 		cobra.CheckErr(err)
 		log.Info("workspace: ", workspace)
@@ -55,6 +58,7 @@ var buildCmd = &cobra.Command{
 					dest := filepath.Join(destTempFolder, publicDir)
 					err := cp.Copy(src, dest)
 					cobra.CheckErr(err)
+					count++
 				}
 				if !ignoreFolder.MatchString(v.Name()) {
 					isIgnore, err := afs.Exists(filepath.Join(workspace, v.Name(), ignoreFile))
@@ -103,6 +107,7 @@ var buildCmd = &cobra.Command{
 					err = afs.SafeWriteReader(dest, strings.NewReader(htmlString))
 					cobra.CheckErr(err)
 					log.Info("generator html: ", filepath.Join(v.Name(), indexHtml))
+					count++
 				}
 			}(v)
 		}
@@ -116,7 +121,11 @@ var buildCmd = &cobra.Command{
 		err = os.RemoveAll(tempRoot)
 		cobra.CheckErr(err)
 
-		log.Info("done.")
+		elapsed := time.Since(start)
+		log.WithFields(map[string]interface{}{
+			"time":  elapsed,
+			"count": count,
+		}).Info("done.")
 	},
 }
 
