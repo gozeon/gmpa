@@ -14,6 +14,7 @@ import (
 )
 
 var (
+	appName         = "gmpa"
 	ignoreFolder    = regexp.MustCompile(`^(.git|dist|.idea|.vscode|public|node_modules)$`)
 	ignoreFile      = ".gmpaignore"
 	outputDir       = "dist"
@@ -34,6 +35,12 @@ var buildCmd = &cobra.Command{
 
 		fileInfo, err := afs.ReadDir(workspace)
 		cobra.CheckErr(err)
+
+		tempRoot := afs.GetTempDir(appName)
+		destTempFolder, err := afs.TempDir(tempRoot, "build-")
+		cobra.CheckErr(err)
+		log.Info("Temp Folder: ", destTempFolder)
+
 		var wg sync.WaitGroup
 		for _, v := range fileInfo {
 			wg.Add(1)
@@ -45,7 +52,7 @@ var buildCmd = &cobra.Command{
 				}
 				if v.Name() == publicDir {
 					src := filepath.Join(workspace, v.Name())
-					dest := filepath.Join(workspace, outputDir, publicDir)
+					dest := filepath.Join(destTempFolder, publicDir)
 					err := cp.Copy(src, dest)
 					cobra.CheckErr(err)
 				}
@@ -92,15 +99,23 @@ var buildCmd = &cobra.Command{
 					htmlString, err := html.GetHtml()
 					cobra.CheckErr(err)
 
-					dest := filepath.Join(workspace, outputDir, v.Name(), indexHtml)
-					afs.Remove(dest)
+					dest := filepath.Join(destTempFolder, v.Name(), indexHtml)
 					err = afs.SafeWriteReader(dest, strings.NewReader(htmlString))
 					cobra.CheckErr(err)
-					log.Info("generator html: ", dest)
+					log.Info("generator html: ", filepath.Join(v.Name(), indexHtml))
 				}
 			}(v)
 		}
 		wg.Wait()
+
+		// copy temp to dest
+		err = cp.Copy(destTempFolder, filepath.Join(workspace, outputDir))
+		cobra.CheckErr(err)
+
+		// del temp root
+		err = os.RemoveAll(tempRoot)
+		cobra.CheckErr(err)
+
 		log.Info("done.")
 	},
 }
