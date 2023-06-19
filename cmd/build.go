@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -113,13 +114,21 @@ var buildCmd = &cobra.Command{
 		}
 		wg.Wait()
 
-		// copy temp to dest
-		err = cp.Copy(destTempFolder, filepath.Join(workspace, outputDir))
+		destFolder := filepath.Join(workspace, outputDir)
+		exists, err := afs.Exists(destFolder)
 		cobra.CheckErr(err)
+		if exists {
+			delete, err := utils.PromptBool(fmt.Sprintf("`%s` is exists, delete it ? ", destFolder))
+			cobra.CheckErr(err)
+			if delete {
+				cobra.CheckErr(afs.RemoveAll(destFolder))
+			}
+		}
+		// copy temp to dest
+		cobra.CheckErr(cp.Copy(destTempFolder, destFolder))
 
 		// del temp root
-		err = os.RemoveAll(tempRoot)
-		cobra.CheckErr(err)
+		cobra.CheckErr(afs.RemoveAll(tempRoot))
 
 		elapsed := time.Since(start)
 		log.WithFields(map[string]interface{}{
