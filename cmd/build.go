@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	ignoreFolder    = regexp.MustCompile(`^(.git|dist|.idea|.vscode|public)$`)
+	ignoreFolder    = regexp.MustCompile(`^(.git|dist|.idea|.vscode|public|node_modules)$`)
 	ignoreFile      = ".gmpaignore"
 	outputDir       = "dist"
 	publicDir       = "public"
