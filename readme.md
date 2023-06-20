@@ -2,6 +2,18 @@
 
 The cli tools for build Multi-Page Application.
 
+# use
+
+```go
+go install github.com/gozeon/gmpa
+
+cd <target folder>
+
+gmpa build
+```
+
+see `demo` .
+
 # screenshot
 
 ![](2023-06-20_090920.png "screenshot")
