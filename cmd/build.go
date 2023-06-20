@@ -112,6 +112,7 @@ var buildCmd = &cobra.Command{
 			}(v)
 		}
 		wg.Wait()
+		elapsed := time.Since(start)
 
 		destFolder := utils.GetOutputPath(workspace, outputDir)
 		exists, err := afs.Exists(destFolder)
@@ -129,7 +130,6 @@ var buildCmd = &cobra.Command{
 		// del temp root
 		cobra.CheckErr(afs.RemoveAll(tempRoot))
 
-		elapsed := time.Since(start)
 		log.Info("output: ", destFolder)
 		log.WithFields(map[string]interface{}{
 			"times": elapsed,
