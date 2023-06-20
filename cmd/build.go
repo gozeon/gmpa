@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/gozeon/gmpa/utils"
@@ -32,7 +33,7 @@ var buildCmd = &cobra.Command{
 	Short: "A brief description of your command",
 	Run: func(cmd *cobra.Command, args []string) {
 		start := time.Now()
-		count := 0
+		var count int32 = 0
 		workspace, err := os.Getwd()
 		cobra.CheckErr(err)
 		log.Info("workspace: ", workspace)
@@ -57,9 +58,8 @@ var buildCmd = &cobra.Command{
 				if v.Name() == publicDir {
 					src := filepath.Join(workspace, v.Name())
 					dest := filepath.Join(destTempFolder, publicDir)
-					err := cp.Copy(src, dest)
-					cobra.CheckErr(err)
-					count++
+					cobra.CheckErr(cp.Copy(src, dest))
+					log.Info("copy: ", src)
 				}
 				if !ignoreFolder.MatchString(v.Name()) {
 					isIgnore, err := afs.Exists(filepath.Join(workspace, v.Name(), ignoreFile))
@@ -105,10 +105,9 @@ var buildCmd = &cobra.Command{
 					cobra.CheckErr(err)
 
 					dest := filepath.Join(destTempFolder, v.Name(), indexHtml)
-					err = afs.SafeWriteReader(dest, strings.NewReader(htmlString))
-					cobra.CheckErr(err)
+					cobra.CheckErr(afs.SafeWriteReader(dest, strings.NewReader(htmlString)))
 					log.Info("generator html: ", filepath.Join(v.Name(), indexHtml))
-					count++
+					atomic.AddInt32(&count, 1)
 				}
 			}(v)
 		}
@@ -118,9 +117,9 @@ var buildCmd = &cobra.Command{
 		exists, err := afs.Exists(destFolder)
 		cobra.CheckErr(err)
 		if exists {
-			delete, err := utils.PromptBool(fmt.Sprintf("`%s` is exists, delete it ? ", destFolder))
+			isDel, err := utils.PromptBool(fmt.Sprintf("`%s` is exists, delete it ? ", destFolder))
 			cobra.CheckErr(err)
-			if delete {
+			if isDel {
 				cobra.CheckErr(afs.RemoveAll(destFolder))
 			}
 		}
@@ -133,8 +132,8 @@ var buildCmd = &cobra.Command{
 		elapsed := time.Since(start)
 		log.Info("output: ", destFolder)
 		log.WithFields(map[string]interface{}{
-			"time":  elapsed,
-			"count": count,
+			"times": elapsed,
+			"pages": count,
 		}).Info("done.")
 	},
 }
