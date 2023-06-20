@@ -113,7 +113,7 @@ var buildCmd = &cobra.Command{
 		}
 		wg.Wait()
 
-		destFolder := filepath.Join(workspace, outputDir)
+		destFolder := utils.GetOutputPath(workspace, outputDir)
 		exists, err := afs.Exists(destFolder)
 		cobra.CheckErr(err)
 		if exists {
