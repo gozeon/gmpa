@@ -19,11 +19,11 @@ var (
 	appName         = "gmpa"
 	ignoreFolder    = regexp.MustCompile(`^(.git|dist|.idea|.vscode|public|node_modules)$`)
 	ignoreFile      = ".gmpaignore"
-	outputDir       = "dist"
 	publicDir       = "public"
 	indexJavascript = "main.js"
 	indexCss        = "style.css"
 	indexHtml       = "index.html"
+	outputDir       string
 )
 
 // buildCmd represents the build command
@@ -131,6 +131,7 @@ var buildCmd = &cobra.Command{
 		cobra.CheckErr(afs.RemoveAll(tempRoot))
 
 		elapsed := time.Since(start)
+		log.Info("output: ", destFolder)
 		log.WithFields(map[string]interface{}{
 			"time":  elapsed,
 			"count": count,
@@ -141,5 +142,5 @@ var buildCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(buildCmd)
 
-	buildCmd.Flags().StringP("output", "o", "", "output folder")
+	buildCmd.Flags().StringVarP(&outputDir, "output", "o", "dist", "output folder")
 }
