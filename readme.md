@@ -10,6 +10,10 @@ go install github.com/gozeon/gmpa
 cd <target folder>
 
 gmpa build
+
+# or
+
+gmpa build --target ./demo --output ./demo/dist
 ```
 
 see `demo` .
