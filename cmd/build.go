@@ -25,6 +25,8 @@ var (
 	indexCss        = "style.css"
 	indexHtml       = "index.html"
 	outputDir       string
+	srcDir          string
+	cwd             string
 )
 
 // buildCmd represents the build command
@@ -34,8 +36,9 @@ var buildCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		start := time.Now()
 		var count int32 = 0
-		workspace, err := os.Getwd()
+		workspace, err := utils.GetWorkspacePath(srcDir)
 		cobra.CheckErr(err)
+		log.Info("cwd: ", cwd)
 		log.Info("workspace: ", workspace)
 
 		fileInfo, err := afs.ReadDir(workspace)
@@ -114,7 +117,7 @@ var buildCmd = &cobra.Command{
 		wg.Wait()
 		elapsed := time.Since(start)
 
-		destFolder := utils.GetOutputPath(workspace, outputDir)
+		destFolder := utils.GetOutputPath(cwd, outputDir)
 		exists, err := afs.Exists(destFolder)
 		cobra.CheckErr(err)
 		if exists {
@@ -141,5 +144,7 @@ var buildCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(buildCmd)
 
-	buildCmd.Flags().StringVarP(&outputDir, "output", "o", "dist", "output folder")
+	cwd, _ = os.Getwd()
+	buildCmd.Flags().StringVarP(&srcDir, "target", "t", cwd, "targer folder")
+	buildCmd.Flags().StringVarP(&outputDir, "output", "o", filepath.Join(cwd, "dist"), "output folder")
 }
