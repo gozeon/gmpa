@@ -3,7 +3,7 @@ module github.com/gozeon/gmpa
 go 1.20
 
 require (
-	github.com/evanw/esbuild v0.19.11
+	github.com/evanw/esbuild v0.19.12
 	github.com/manifoldco/promptui v0.9.0
 	github.com/otiai10/copy v1.14.0
 	github.com/sirupsen/logrus v1.9.3
